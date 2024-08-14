@@ -32,29 +32,29 @@ func (u *UserHandler) RegisterUser(c *gin.Context) {
 
 	}
 
-	applicationusersschan := make(chan appuser.ApplicationUser)
-	errorChan := make(chan error)
-	go func() {
-		appss, errchan := u.authService.RegisterUser(input)
-		if errchan != nil {
-			errorChan <- errchan
-			return
-		}
-		applicationusersschan <- appss
-	}()
+	// applicationusersschan := make(chan appuser.ApplicationUser)
+	// errorChan := make(chan error)
+	// go func() {
+	// 	appss, errchan := u.authService.RegisterUser(input)
+	// 	if errchan != nil {
+	// 		errorChan <- errchan
+	// 		return
+	// 	}
+	// 	applicationusersschan <- appss
+	// }()
 
-	var userx appuser.ApplicationUser
-	var errh error
+	// var userx appuser.ApplicationUser
+	// var errh error
 
-	// Menunggu hasil dari kedua goroutine
-	for i := 0; i < 1; i++ {
-		select {
-		case userx = <-applicationusersschan:
-		case errh = <-errorChan:
-		}
-	}
+	// // Menunggu hasil dari kedua goroutine
+	// for i := 0; i < 1; i++ {
+	// 	select {
+	// 	case userx = <-applicationusersschan:
+	// 	case errh = <-errorChan:
+	// 	}
+	// }
 
-	//_, err2 := u.authService.RegisterUser(input, &wg)
+	_, errh := u.authService.RegisterUser(input)
 	if errh != nil {
 		utilitys.LogError(errh)
 		errormessage := H{"errors": errh.Error()}
@@ -62,7 +62,7 @@ func (u *UserHandler) RegisterUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, response)
 		return
 	}
-	response := helpers.BaseCommandResponse("Account has been registered", http.StatusOK, "success", userx)
+	response := helpers.BaseCommandResponse("Account has been registered", http.StatusOK, "success", nil)
 	c.JSON(http.StatusOK, response)
 }
 

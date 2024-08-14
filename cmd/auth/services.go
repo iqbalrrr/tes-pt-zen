@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"os"
+	"sync"
 	"tesptzen/cmd/appuser"
 	"tesptzen/utilitys"
 	"tesptzen/utilitys/token"
@@ -32,20 +33,44 @@ func NewService(repository appuser.IRepository) *authServices {
 }
 
 func (s *authServices) RegisterUser(input appuser.RegisterUserInputDto) (appuser.ApplicationUser, error) {
+	var wg sync.WaitGroup
 	appuserz := appuser.NewApplicationuser()
 	//automapper.MapLoose(input, &Appuser)
 	appuserz.Username = input.Username
 	appuserz.Email = input.Email
 	appuserz.PhoneNumber = input.PhoneNumber
 
-	passwordhash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.MinCost)
+	errResultChan := make(chan error)
+	firstResultChan := make(chan []byte)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		firstResult, errfirstchan := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.MinCost)
+		firstResultChan <- firstResult
+		errResultChan <- errfirstchan
+	}()
+
+	//passwordhash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.MinCost)
+	passwordhash := <-firstResultChan
+	err := <-errResultChan
+
 	if err != nil {
 		utilitys.LogError(err)
 		return appuserz, err
 	}
 	appuserz.PasswordHash = string(passwordhash)
 
-	ads, errx := s.repository.FindByFieldName("Username", appuserz.Username)
+	SecondResultChan := make(chan []appuser.ApplicationUser)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		secResult, errfirstchan := s.repository.FindByFieldName("Username", appuserz.Username)
+		SecondResultChan <- secResult
+		errResultChan <- errfirstchan
+	}()
+	ads := <-SecondResultChan
+	errx := <-errResultChan
+	//ads, errx := s.repository.FindByFieldName("Username", appuserz.Username)
 	if errx != nil {
 		utilitys.LogError(errx)
 		return appuserz, errx
@@ -53,12 +78,25 @@ func (s *authServices) RegisterUser(input appuser.RegisterUserInputDto) (appuser
 	if len(ads) != 0 {
 		return appuserz, errors.New("User Sudah Tersedia")
 	}
-	_, err2 := s.repository.Insert(appuserz)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		_, errfirstchan := s.repository.Insert(appuserz)
+		errResultChan <- errfirstchan
+	}()
+	//_, err2 := s.repository.Insert(appuserz)
+	err2 := <-errResultChan
 	if err2 != nil {
 		utilitys.LogError(err2)
 		return appuserz, err2
 	}
-
+	go func() {
+		wg.Wait()
+		close(firstResultChan)
+		close(SecondResultChan)
+		close(errResultChan)
+	}()
 	return appuserz, nil
 }
 
