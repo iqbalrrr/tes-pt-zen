@@ -5,11 +5,7 @@ import (
 	"tesptzen/utilitys"
 	"tesptzen/utilitys/dependencyinjection"
 
-	///_ "tesptzen/docs" // pastikan untuk mengganti dengan path yang benar
-
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func NewRoute(c *gin.Engine) *gin.Engine {
@@ -37,6 +33,5 @@ func NewRoute(c *gin.Engine) *gin.Engine {
 
 	c.GET("/order/getall", mjmpesanan.GetAll)
 
-	c.GET("/swagger/index", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	return c
 }
