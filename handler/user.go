@@ -32,28 +32,6 @@ func (u *UserHandler) RegisterUser(c *gin.Context) {
 
 	}
 
-	// applicationusersschan := make(chan appuser.ApplicationUser)
-	// errorChan := make(chan error)
-	// go func() {
-	// 	appss, errchan := u.authService.RegisterUser(input)
-	// 	if errchan != nil {
-	// 		errorChan <- errchan
-	// 		return
-	// 	}
-	// 	applicationusersschan <- appss
-	// }()
-
-	// var userx appuser.ApplicationUser
-	// var errh error
-
-	// // Menunggu hasil dari kedua goroutine
-	// for i := 0; i < 1; i++ {
-	// 	select {
-	// 	case userx = <-applicationusersschan:
-	// 	case errh = <-errorChan:
-	// 	}
-	// }
-
 	_, errh := u.authService.RegisterUser(input)
 	if errh != nil {
 		utilitys.LogError(errh)
